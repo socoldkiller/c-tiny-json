@@ -345,13 +345,11 @@ void listJoin(list *l, list *o) {
 }
 
 
-listIterDistance *listGetIteratorDistance(list *l, int direction, int distance) {
-    listIterDistance *dis = malloc(sizeof(listIterDistance));
-    if (!dis) {
-        //  printf("listIterDistance out of memory\n");
+listIterDistance *listGetIteratorDistance(const list *l, int direction, int distance) {
+    listIterDistance *dis;
+    if ((dis = malloc(sizeof(*dis))) == NULL) {
         return NULL;
     }
-
     dis->distance = distance;
     dis->iter = listGetIterator(l, direction);
     return dis;
@@ -398,5 +396,16 @@ void listNodeMap(list *l, ListNodeCallBack callback) {
 }
 
 
-
-
+int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p)) {
+    listIterDistance *head = listGetIteratorDistance(l, AL_START_HEAD, 0);
+    listNode *node;
+    int _bool = 0;
+    while ((node = listDistanceNext(head)) != NULL) {
+        _bool = cmp(node, p);
+        if (_bool) {
+            break;
+        }
+    }
+    listReleaseDistance(head);
+    return _bool;
+}

@@ -1,161 +1,83 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include "sds.h"
 #include "adlist.h"
 #include <string.h>
+#include <time.h>
 
-struct context;
-typedef struct context context;
+sdshdr *p;
 
-typedef void(callback)(void);
-
-typedef void(ctxCall)(struct context *);
-
-struct context {
-    struct context *ctx;
-    int index;
-    const char *fun_name;
-    callback *call;
-    char *info;
-    void *anycall;
-    void *data;
-};
-
-
-void syscall(void) {
-    printf("call name");
+void callback(size_t idx, listNode *n) {
+    sdshdr *r = n->value;
+    sdsJoinchar(p, r->buf);
+    sdshdrPrint(r);
 }
 
-context *make_context() {
-    context *ctx = malloc(sizeof(context));
-    ctx->ctx = NULL;
-    ctx->index = -1;
-    ctx->fun_name = "";
-    ctx->call = NULL;
-    ctx->anycall = NULL;
-    ctx->info = "";
-    ctx->data = NULL;
-    return ctx;
-}
+sdshdr *listToString(const list *l);
 
-void *free_context(context *ctx) {
-    //  freeNode(ctx);
-    ctx = NULL;
-    return ctx;
+
+int cmp(listNode *n, void *s) {
+    sdshdr *sds = n->value;
+    const char *s1 = s;
+    return !strcmp(sds->buf, s);
 }
 
 
-void ctx_call(void *ctx) {
-    context *c = ctx;
-    int index = c->index;
-    printf("index = %d\n", index);
-
+int findListIndexStr(const list *l, const char *s) {
+    return findlistNode(l, s, cmp);
 }
 
+void testsdshdrList() {
+    char s[50] = {0};
+    int n = 1;
+    list *l = listCreate();
+    sdshdr *tmp = makeSdsHdr("hello world");
+    listAddNodeTail(l, tmp);
+    while (n--) {
+        memset(s, 0, sizeof(char) * 50);
+        int limit = rand() % 50;
+        for (int i = 0; i < limit; i++) {
+            s[i] = rand() % 26 + 'a';
+        }
 
-int comp1(const void *ctx1, const void *ctx2) {
-    const context *ca = *(context **) ctx1;
-    const context *cb = *(context **) ctx2;
-    return ca->index - cb->index;
-}
-
-typedef int(Compare)(const void *, const void *);
-
-
-struct Reply {
-    char *reply;
-    int id;
-};
-
-
-void test() {
-    context *cc[10];
-    srand(1000);
-
-
-    for (size_t i = 0; i < 10; i++) {
-        cc[i] = make_context();
-        cc[i]->index = rand() % 100;
-        cc[i]->anycall = ctx_call;
-
+        sdshdr *sp = makeSdsHdr(s);
+        listAddNodeTail(l, sp);
     }
 
-    for (size_t i = 0; i < 10; i++) {
-        if (i + 1 != 10)
-            cc[i]->ctx = cc[i + 1];
+    sdshdr *s1 = listToString(l);
+    printf("%s", s1->buf);
+    int _bool = findListIndexStr(l, "hello world");
+    printf("%d", _bool);
+    sdshdrRelease(s1);
+}
+
+
+sdshdr *listToString(const list *l) {
+    sdshdr *s = makeSdsHdr("[");
+    listIterDistance *head = listGetIteratorDistance(l, AL_START_HEAD, 0);
+    listNode *node;
+    while ((node = listDistanceNext(head)) != NULL) {
+        sdshdr *data = node->value;
+        sdsJoinchar(s, "\"");
+        sdsJoinchar(s, data->buf);
+        sdsJoinchar(s, "\"");
+        sdsJoinchar(s, ",");
     }
-
-
-    for (context *ctx = cc[0]; ctx != NULL; ctx = ctx->ctx) {
-        ctxCall *call = ctx->anycall;
-        call(ctx);
-    }
-
-
-    for (size_t i = 0; i < 10; i++) {
-        free_context(cc[i]);
-    }
-
-}
-
-typedef listNode *(listNodeCallback)(int, listNode *);
-
-
-listNode *randListNode(int index, listNode *node) {
-    int *num = malloc(sizeof(int));
-    *num = rand() % 100;
-    node->value = num;
-    return NULL;
-}
-
-
-typedef struct Data {
-    int val;
-    int ref_count;
-} Data;
-
-Data makeData(int val) {
-    Data d;
-    d.val = val;
-    d.ref_count = 0;
-    return d;
-}
-
-Data copyData(Data *d) {
-    d->ref_count += 1;
-    return *d;
-}
-
-void freeData(void *d) {
-    free(d);
-}
-
-
-void showrandListNode(size_t index, listNode *node) {
-    Data *num = node->value;
-    printf("index = %zu,num = %d\n", index, num->val);
-}
-
-
-void intFree(void *num) {
-    free(num);
+    //delete last ,
+    size_t len = strlen(s->buf);
+    s->buf[len - 1] = 0;
+    sdsJoinchar(s, "]");
+    return s;
 }
 
 
 int main() {
-
-    srand(1000);
-    list *l = listCreate();
-    l->freeNode = freeData;
-
-
-    for (int i = 0; i < 10; i++) {
-        int *p = malloc(sizeof(int));
-        scanf("%d", p);
-        listAddNodeTail(l, p);
-    }
-
-    listNodeMap(l, showrandListNode);
-    listRelease(l);
+    clock_t start = clock();
+    srand(time(NULL));
+    testsdshdrList();
+    printf("\n");
+    clock_t end = clock();
+    printf("%.4fms", ((double) (end - start) / CLOCKS_PER_SEC) * 1000);
+    return 0;
 }
 
 

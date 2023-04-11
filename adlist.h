@@ -6,6 +6,7 @@ extern const int AL_START_TAIL;
 
 
 typedef struct list list;
+typedef int bool;
 
 typedef struct listNode {
     struct listNode *prev;
@@ -25,7 +26,7 @@ typedef struct listIterDistance {
     int distance;
 } listIterDistance;
 
-listIterDistance *listGetIteratorDistance(list *l, int direction, int distance);
+listIterDistance *listGetIteratorDistance(const list *l, int direction, int distance);
 
 listNode *listDistanceNext(listIterDistance *iter);
 
@@ -122,4 +123,5 @@ typedef void (ListNodeCallBack)(size_t idx, listNode *node);
 
 void listNodeMap(list *l, ListNodeCallBack callback);
 
+int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p));
 
