@@ -1,6 +1,8 @@
 #pragma  once
 
 
+#include "sds.h"
+
 extern const int AL_START_HEAD;
 extern const int AL_START_TAIL;
 
@@ -125,3 +127,4 @@ void listNodeMap(list *l, ListNodeCallBack callback);
 
 int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p));
 
+sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *node));
