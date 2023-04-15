@@ -56,8 +56,12 @@ void testlistToString() {
 
 
 int main() {
-    // testsdshdrList();
-    //testMakeValue();
-    testlistToString();
-    return 0;
+    Dict *d = makeDict();
+    Value *v = makeValue(makeSdsHdr("hellafdsa"), STRING);
+    addKeyValue(d, "t", v);
+    addKeyValue(d,"t2",v);
+    Value *v1 = DictKey(d, "t2");
+    sdshdr* buf = ValueToString(v1);
+    printf("%s",buf->buf);
+    sdshdrRelease(buf);
 }
