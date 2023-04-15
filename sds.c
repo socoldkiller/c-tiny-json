@@ -7,12 +7,12 @@ size_t _sdsmax(size_t a, size_t b) {
 }
 
 
- size_t sdslen(const sdshdr *s) {
+size_t sdslen(const sdshdr *s) {
     return s->length;
 }
 
 // const char * to sdshdr
- sdshdr *makeSdsHdr(const char *s) {
+sdshdr *makeSdsHdr(const char *s) {
     char *p;
     sdshdr *sds;
 
@@ -26,7 +26,6 @@ size_t _sdsmax(size_t a, size_t b) {
     }
 
     memcpy(p, s, len + 1);
-
     sds->buf = p;
     sds->length = len;
     sds->alloc_length = len + 1;
@@ -62,9 +61,11 @@ sdshdr *sdsJoinchar(sdshdr *s, const char *str) {
 
     }
 
-    s->buf = strcat(s->buf, pStr ? pStr : str);
+    //  s->buf = strcat(s->buf, pStr ? pStr : str);
+    memcpy(s->buf + s->length, pStr ? pStr : str, strlen(str));
     s->alloc_length = new_alloc;
-    s->length = strlen(s->buf);
+    // s->length = strlen(s->buf);
+    s->length += len;
     free(pStr);
     return s;
 }

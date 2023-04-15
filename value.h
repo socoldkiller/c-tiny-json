@@ -1,7 +1,7 @@
 
 #include "sds.h"
 #include "adlist.h"
-
+#include <assert.h>
 typedef size_t Label;
 
 
@@ -88,9 +88,9 @@ sdshdr *ValueToString(Value *v) {
         case DOUBLE:
 
         case LIST: {
-            sdshdr *p = listToString(v->list, ListToStringCallback);
-            sdsJoinchar(toStr, p->buf);
-            sdshdrRelease(p);
+            listToString(v->list, ListToStringCallback,toStr);
+            // sdsJoinchar(toStr, p->buf);
+          //  sdshdrRelease(p);
             break;
         }
         case VALUE: {
@@ -106,7 +106,8 @@ sdshdr *ValueToString(Value *v) {
             sdsJoinchar(toStr, "\"");
             break;
         default:
-            break;
+            printf("error type! please check type");
+            exit(1);
     }
     return toStr;
 }

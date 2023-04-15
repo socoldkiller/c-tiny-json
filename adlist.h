@@ -127,4 +127,4 @@ void listNodeMap(list *l, ListNodeCallBack callback);
 
 int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p));
 
-sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *node));
+sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *node),sdshdr *ctx);

@@ -36,18 +36,21 @@ sdshdr *cl(list *l, sdshdr *ctx, void *value) {
 
 void testlistToString() {
     list *l = listCreate();
-    listAddNodeTail(l, makeValueStr("hello,world"));
-    int *n = malloc(sizeof(int));
-    *n = 100;
-    listAddNodeTail(l, makeValue(n, INT));
-    list *l2 = listCreate();
-    listAddNodeTail(l2, makeValue(l, LIST));
-    listAddNodeTail(l2, makeValue(l, LIST));
-    listAddNodeTail(l2, makeValue(l, LIST));
-    listAddNodeTail(l2, makeValue(n, INT));
-    Value *p = makeValue(l2, LIST);
-    sdshdr *s = ValueToString(p);
+    for (int i = 0; i < 10; i++) {
+        listAddNodeTail(l, makeValueInt(rand()));
+        listAddNodeTail(l, makeValueStr("what fuck"));
+    }
+    list *ll = listCreate();
+    for (int i = 0; i < 100; i++) {
+        listAddNodeTail(ll, makeValueList(l));
+
+    }
+    Value *v = makeValue(ll, LIST);
+    clock_t start = clock();
+    sdshdr *s = ValueToString(v);
     printf("%s", s->buf);
+    clock_t end = clock();
+    printf("used time is %.2fms", 1000 * (double) (end - start) / CLOCKS_PER_SEC);
     sdshdrRelease(s);
 }
 
