@@ -85,6 +85,15 @@ sdshdr *ListToStringCallback(list *l, sdshdr *ctx, void *v) {
     return ctx;
 }
 
+char *dellastZero(char *s) {
+    size_t len = strlen(s);
+    while (--len) {
+        if (s[len] == '0')
+            s[len] = 0;
+    }
+    return s;
+}
+
 sdshdr *ValueToString(Value *v) {
     if (!v) {
         return NULL;
@@ -105,6 +114,7 @@ sdshdr *ValueToString(Value *v) {
             char *cache = malloc(40 + 16);
             memset(cache, 0, 40 + 16);
             sprintf(cache, "%f", *(double *) v->number);
+            dellastZero(cache);
             sdsJoinchar(toStr, cache);
             free(cache);
             break;

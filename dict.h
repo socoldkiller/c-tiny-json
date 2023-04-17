@@ -65,9 +65,7 @@ sdshdr *DictToString(Dict *dict, sdshdr *ctx) {
     listNode *node;
     while ((node = listDistanceNext(head)) != NULL) {
         Pair *v = node->value;
-        sdsJoinchar(ctx, "\"");
         sdsJoinchar(ctx, v->key->buf);
-        sdsJoinchar(ctx, "\"");
         sdsJoinchar(ctx, ":");
         sdshdr *valueToString = ValueToString(v->value);
         sdsJoinchar(ctx, valueToString->buf);

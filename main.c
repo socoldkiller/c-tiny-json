@@ -61,15 +61,31 @@ void read_file(FILE *fp, sdshdr *s) {
     }
 }
 
+void testIsInt() {
+    sdshdr *s = makeSdsHdr("121.32");
+    context_string c = {s, 0};
+    int n = isInt(&c);
+    Value *v;
+    if ((v = malloc(sizeof(*v))) == NULL) {
+        return;
+    }
+    parseNumber(v, &c);
+    vPrintf("%s", v);
+    printf("%d", n);
+};
+
 
 int main() {
-    //   testDictToString();
-
+//   // testDictToString();
     FILE *fp = fopen("../a.json", "r");
-    //char s1[50];
-    //memset(s1, 0, 50);
     sdshdr *s = makeSdsHdr("");
     read_file(fp, s);
+//    Value *data = parse(s);
+//    list *h =listCreate();
+//    listAddNodeTail(h, makeValueInt(1));
+//    listAddNodeTail(h, makeValueInt(2222));
+//    listAddNodeTail(data->list, makeValueList(h));
+//    vPrintf("%s",data);
     Value *data = parse(s);
     vPrintf("%s", data);
 }
