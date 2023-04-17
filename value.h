@@ -22,7 +22,31 @@ enum {
     LIST,
     VALUE,
     DICT,
+    _NULL,
+    True,
+    False
 };
+
+const char *getTypeName(int type) {
+    switch (type) {
+        case INT:
+            return "INT";
+        case FLOAT:
+            return "FLOAT";
+        case DOUBLE:
+            return "DOUBLE";
+        case STRING:
+            return "STRING";
+        case LIST:
+            return "LIST";
+        case VALUE:
+            return "VALUE";
+        case DICT:
+            return "DICT";
+        default:
+            return "known type";
+    }
+}
 
 
 typedef struct Value {
@@ -137,6 +161,20 @@ sdshdr *ValueToString(Value *v) {
         case DICT:
             DictToString(v->dict, toStr);
             break;
+
+        case _NULL:
+            sdsJoinchar(toStr, "null");
+            break;
+
+
+        case True:
+            sdsJoinchar(toStr, "true");
+            break;
+
+        case False:
+            sdsJoinchar(toStr, "false");
+            break;
+
         default:
             printf("error type! please check type");
             exit(1);

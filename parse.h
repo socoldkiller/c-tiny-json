@@ -5,19 +5,32 @@
 #include <assert.h>
 #include <ctype.h>
 
+
+typedef struct context_string context_string;
+
+Value *_parse(context_string *ctx_string);
+
+context_string *skip_space(context_string *ctx);
+
 typedef struct context_string {
     sdshdr *buf;
     size_t now_index;
 } context_string;
 
 
-char *string_view(context_string *ctx) {
+char *str_next(context_string *ctx) {
     return ctx->buf->buf + ctx->now_index;
 }
 
 
+char *forword_str_next(context_string *ctx) {
+    skip_space(ctx);
+    return str_next(ctx);
+}
+
+
 int isInt(context_string *context_string) {
-    char *p = string_view(context_string);
+    char *p = str_next(context_string);
     while (p[0]) {
         if (p[0] == '.')
             return DOUBLE;
@@ -47,30 +60,69 @@ Value *deepCopyDouble(Value *v, double n) {
 }
 
 
-Value *_parse(context_string *ctx_string);
-
 Value *parseNumber(Value *ctx, context_string *ctx_string) {
-    char *p = string_view(ctx_string);
+    char *str_view = str_next(ctx_string);
     char *endpoint = NULL;
-    int n = isInt(ctx_string);
-    if (n == INT) {
-        int data = (int) strtod(p, &endpoint);
-        deepCopyInt(ctx, data);
+    double num = strtod(str_view, &endpoint);
+    if (num - (int) num) {
+        double *heap = malloc(sizeof(double));
+        *heap = num;
+        ctx->doubleNumber = heap;
+        ctx->label = DOUBLE;
 
-    } else if (n == DOUBLE) {
-        double data = strtod(p, &endpoint);
-        deepCopyDouble(ctx, data);
+    } else {
+        int *heap = malloc(sizeof(int));
+        *heap = (int) num;
+        ctx->number = heap;
+        ctx->label = INT;
     }
-    ctx_string->now_index += (endpoint - p);
+
+    ctx_string->now_index += (endpoint - str_view);
     return ctx;
 }
 
 
+Value *parseNull(Value *ctx, context_string *ctx_string) {
+    char *nullStr = str_next(ctx_string);
+    if (nullStr[1] == 'u' && nullStr[2] == 'l' && nullStr[3] == 'l') {
+        ctx->label = _NULL;
+    }
+    ctx_string->now_index += 4;
+    return ctx;
+}
+
+
+Value *parseTrue(Value *ctx, context_string *ctx_string) {
+    char *TrueStr = str_next(ctx_string);
+    if (TrueStr[1] == 'r' && TrueStr[2] == 'u' && TrueStr[3] == 'e') {
+        ctx->label = True;
+    }
+    ctx_string->now_index += 4;
+    return ctx;
+}
+
+
+Value *parseFalse(Value *ctx, context_string *ctx_string) {
+    char *FalseStr = str_next(ctx_string);
+    if (FalseStr[1] == 'a' && FalseStr[2] == 'l' && FalseStr[3] == 's' && FalseStr[4] == 'e') {
+        ctx->label = False;
+    }
+    ctx_string->now_index += 5;
+    return ctx;
+}
+
 Value *parseString(Value *ctx, context_string *ctx_string) {
     // skip "
+
+    if (str_next(ctx_string)[0] != '\"') {
+        printf("dict key must is char*");
+        exit(1);
+    }
+
+    // skip '\"'
     ctx_string->now_index += 1;
     sdshdr *s = makeSdsHdr("\"");
-    char *start = string_view(ctx_string);
+    char *start = str_next(ctx_string);
     char *tmp = malloc(1);
     memset(tmp, 0, 1);
     for (size_t i = 0;; i++) {
@@ -88,8 +140,8 @@ Value *parseString(Value *ctx, context_string *ctx_string) {
 }
 
 context_string *skip_space(context_string *ctx) {
-    char *iter = string_view(ctx);
-    while (ctx->now_index != ctx->buf->length) {
+    char *iter = str_next(ctx);
+    while (ctx->now_index < ctx->buf->length) {
         if (isspace(iter[0]) || iter[0] == '\n') {
             ctx->now_index += 1;
             ++iter;
@@ -106,21 +158,27 @@ Value *parseArray(Value *ctx, context_string *ctx_string) {
     list *l = listCreate();
     while (1) {
         skip_space(ctx_string);
-        Value *v = _parse(ctx_string);
-        listAddNodeTail(l, v);
-        skip_space(ctx_string);
-        if (string_view(ctx_string)[0] == ']') {
+        if (str_next(ctx_string)[0] == ']') {
             ctx_string->now_index += 1;
             break;
         }
-        if (string_view(ctx_string)[0] != ',') {
-            // json is not ','
-            printf("%s\n", "json _parse error");
-            printf("error line index = %zu\n", ctx_string->now_index);
-            printf("%s\n", string_view(ctx_string));
+
+        Value *v = _parse(ctx_string);
+        listAddNodeTail(l, v);
+        skip_space(ctx_string);
+
+        if (str_next(ctx_string)[0] == ']') {
+            ctx_string->now_index += 1;
+            break;
+        }
+        // json is not ','
+        if (str_next(ctx_string)[0] == ',' || str_next(ctx_string)[0] == ']')
+            ++ctx_string->now_index;
+        else {
+            printf("error");
             exit(1);
         }
-        ctx_string->now_index += 1;
+
     }
     ctx->list = l;
     ctx->label = LIST;
@@ -129,20 +187,24 @@ Value *parseArray(Value *ctx, context_string *ctx_string) {
 
 
 Value *parseDict(Value *ctx, context_string *ctx_string) {
-
     // skip {
     ctx_string->now_index += 1;
-    // skip " " or "\n"
+
     Dict *d = makeDict();
     while (1) {
         //key
+        if (forword_str_next(ctx_string)[0] == '}') {
+            ctx_string->now_index += 1;
+            break;
+        }
+        // skip " " or "\n"
         skip_space(ctx_string);
         Value *key = parseString(ctx, ctx_string);
         sdshdr *this_key = key->str;
         skip_space(ctx_string);
-        char *p = string_view(ctx_string);
+        char *p = str_next(ctx_string);
         if (p[0] == ':')
-            ctx_string->now_index += 1;
+            ++ctx_string->now_index;
         else {
             printf("error type");
             exit(1);
@@ -152,10 +214,10 @@ Value *parseDict(Value *ctx, context_string *ctx_string) {
         skip_space(ctx_string);
         addKeyValue(d, this_key->buf, value);
         sdshdrRelease(this_key);
-        char *str_view = string_view(ctx_string);
+        char *str_view = str_next(ctx_string);
 
         if (str_view[0] == '}') {
-            ctx_string->now_index += 1;
+            ++ctx_string->now_index;
             break;
         }
 
@@ -163,7 +225,7 @@ Value *parseDict(Value *ctx, context_string *ctx_string) {
             printf("parse error");
             exit(1);
         }
-        ctx_string->now_index += 1;
+        ++ctx_string->now_index;
     }
 
     ctx->dict = d;
@@ -174,12 +236,14 @@ Value *parseDict(Value *ctx, context_string *ctx_string) {
 
 
 Value *_parse(context_string *ctx_string) {
-    Value *value = makeValue(NULL, VALUE);
-    char ch = string_view(ctx_string)[0];
+    skip_space(ctx_string);
+    Value *value = makeValue(NULL, _NULL);
+    char ch = str_next(ctx_string)[0];
     switch (ch) {
         case '\"':
             value = parseString(value, ctx_string);
             break;
+        case '-':
         case '0':
         case '1':
         case '2':
@@ -198,6 +262,17 @@ Value *_parse(context_string *ctx_string) {
         case '{':
             value = parseDict(value, ctx_string);
             break;
+        case 'n':
+            value = parseNull(value, ctx_string);
+            break;
+        case 't':
+            value = parseTrue(value, ctx_string);
+            break;
+        case 'f':
+            value = parseFalse(value, ctx_string);
+            break;
+        case 0:
+            break;
         default:
             printf("known error type,please check!");
             exit(1);
@@ -207,19 +282,15 @@ Value *_parse(context_string *ctx_string) {
 }
 
 Value *parse(sdshdr *str) {
-
     //持有语义，非占有语义
-
     context_string ctx_string = {
             .now_index =0,
             .buf =str
     };
-
     ctx_string.buf = str;
     ctx_string.now_index = 0;
     Value *data = _parse(&ctx_string);
     return data;
-
 }
 
 

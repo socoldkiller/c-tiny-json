@@ -1,8 +1,8 @@
 #include <stdlib.h>
+#include <time.h>
 #include "sds.h"
 #include "adlist.h"
 #include "dict.h"
-#include <time.h>
 #include "parse.h"
 
 void testMakeValue() {
@@ -59,6 +59,7 @@ void read_file(FILE *fp, sdshdr *s) {
         if (*c == EOF) return;//到文件尾，不存在下一行
         sdsJoinchar(s, c);
     }
+    free(c);
 }
 
 void testIsInt() {
@@ -75,17 +76,12 @@ void testIsInt() {
 };
 
 
-int main() {
-//   // testDictToString();
-    FILE *fp = fopen("../a.json", "r");
-    sdshdr *s = makeSdsHdr("");
-    read_file(fp, s);
-//    Value *data = parse(s);
-//    list *h =listCreate();
-//    listAddNodeTail(h, makeValueInt(1));
-//    listAddNodeTail(h, makeValueInt(2222));
-//    listAddNodeTail(data->list, makeValueList(h));
-//    vPrintf("%s",data);
-    Value *data = parse(s);
+int main(int argc, char *argv[]) {
+    char *filename = argv[1];
+    FILE *fp = fopen(filename, "r");
+    sdshdr *p = makeSdsHdr("");
+    read_file(fp, p);
+    // printf("%s", p->buf);
+    Value *data = parse(p);
     vPrintf("%s", data);
 }
