@@ -1,9 +1,18 @@
+#pragma once
 
 #include "sds.h"
 #include "adlist.h"
 #include <assert.h>
+#include <time.h>
+
 typedef size_t Label;
 
+
+struct Dict;
+
+typedef struct Dict Dict;
+
+sdshdr *DictToString(Dict *dict, sdshdr *ctx);
 
 enum {
     INT = 1,
@@ -24,6 +33,7 @@ typedef struct Value {
         double *doubleNumber;
         list *list;
         struct Value *value;
+        Dict *dict;
         void *data;
     };
     Label label;
@@ -59,6 +69,11 @@ Value *makeValueList(list *l) {
     return v;
 }
 
+Value *makeValueDict(Dict *dict) {
+    Value *v = makeValue(dict, DICT);
+    return v;
+}
+
 
 sdshdr *ValueToString(Value *v);
 
@@ -84,14 +99,19 @@ sdshdr *ValueToString(Value *v) {
             free(cache);
             break;
         }
-
         case FLOAT:
-        case DOUBLE:
+            break;
+        case DOUBLE: {
+            char *cache = malloc(40 + 16);
+            memset(cache, 0, 40 + 16);
+            sprintf(cache, "%f", *(double *) v->number);
+            sdsJoinchar(toStr, cache);
+            free(cache);
+            break;
+        }
 
         case LIST: {
-            listToString(v->list, ListToStringCallback,toStr);
-            // sdsJoinchar(toStr, p->buf);
-          //  sdshdrRelease(p);
+            listToString(v->list, ListToStringCallback, toStr);
             break;
         }
         case VALUE: {
@@ -100,11 +120,12 @@ sdshdr *ValueToString(Value *v) {
             sdshdrRelease(p);
             break;
         }
-
         case STRING:
-            sdsJoinchar(toStr, "\"");
-            sdsJoinchar(toStr, (const char *) (sdshdr *) v->str->buf);
-            sdsJoinchar(toStr, "\"");
+            sdsJoinchar(toStr, v->str->buf);
+            break;
+
+        case DICT:
+            DictToString(v->dict, toStr);
             break;
         default:
             printf("error type! please check type");
@@ -113,4 +134,18 @@ sdshdr *ValueToString(Value *v) {
     return toStr;
 }
 
+void vPrintf(const char *format, Value *v) {
+    sdshdr *toString = ValueToString(v);
+    if (!strcmp("%s", format)) {
+        printf("%s", toString->buf);
+    }
+    sdshdrRelease(toString);
+}
 
+
+void vPrintfUsedTime(const char *format, Value *v) {
+    clock_t start = clock();
+    vPrintf(format, v);
+    clock_t end = clock();
+    printf("\n\"used time is %.2fms\"", 1000 * (double) (end - start) / CLOCKS_PER_SEC);
+}

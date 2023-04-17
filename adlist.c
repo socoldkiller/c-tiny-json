@@ -411,19 +411,19 @@ int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p)) {
 }
 
 sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *value), sdshdr *ctxStr) {
-    listIterDistance *head = listGetIteratorDistance(l, AL_START_HEAD, 0);
+    listIter iter;
     listNode *node;
     sdsJoinchar(ctxStr, "[");
-    //   sdshdr *ctxStr = makeSdsHdr("[");
-    while ((node = listDistanceNext(head)) != NULL) {
+    listRewind(l,&iter);
+    while ((node = listNext(&iter)) != NULL) {
         callback(l, ctxStr, node->value);
         if (!node->next)
             break;
         sdsJoinchar(ctxStr, ",");
     }
+
     size_t len = strlen(ctxStr->buf);
     ctxStr->buf[len] = 0;
     sdsJoinchar(ctxStr, "]");
-    listReleaseDistance(head);
     return ctxStr;
 }

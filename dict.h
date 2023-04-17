@@ -1,3 +1,5 @@
+#pragma once
+
 #include "adlist.h"
 #include "value.h"
 
@@ -38,16 +40,43 @@ Dict *addKeyValue(Dict *d, const char *key, Value *value) {
 }
 
 void *DictKey(Dict *d, const char *key) {
-
     list *list = d->l;
+    listIterDistance *head = listGetIteratorDistance(list, AL_START_HEAD, 0);
+    listNode *node;
+    void *rValue =NULL;
+    while ((node = listDistanceNext(head)) != NULL) {
+        Pair *v = node->value;
+        if (!strcmp(v->key->buf, key)) {
+            rValue =  v->value;
+        }
+    }
+    listReleaseDistance(head);
+    return rValue;
+}
 
+sdshdr *DictToString(Dict *dict, sdshdr *ctx) {
+    if (!ctx) {
+        assert("ctx is null");
+        exit(1);
+    }
+    sdsJoinchar(ctx, "{");
+    list *list = dict->l;
     listIterDistance *head = listGetIteratorDistance(list, AL_START_HEAD, 0);
     listNode *node;
     while ((node = listDistanceNext(head)) != NULL) {
         Pair *v = node->value;
-        if (!strcmp(v->key->buf, key)) {
-            return v->value;
+        sdsJoinchar(ctx, "\"");
+        sdsJoinchar(ctx, v->key->buf);
+        sdsJoinchar(ctx, "\"");
+        sdsJoinchar(ctx, ":");
+        sdshdr *valueToString = ValueToString(v->value);
+        sdsJoinchar(ctx, valueToString->buf);
+        sdshdrRelease(valueToString);
+        if (node->next) {
+            sdsJoinchar(ctx, ",");
         }
     }
-    return NULL;
+    sdsJoinchar(ctx, "}");
+    listReleaseDistance(head);
+    return ctx;
 }
