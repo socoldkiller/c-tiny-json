@@ -6,61 +6,27 @@
 #include <ctype.h>
 
 
-typedef struct context_string context_string;
+typedef struct string_view string_view;
 
-Value *_parse(context_string *ctx_string);
+Value *_parse(string_view *ctx_string);
 
-context_string *skip_space(context_string *ctx);
+struct string_view *skip_space(string_view *ctx);
 
-typedef struct context_string {
+typedef struct string_view {
     sdshdr *buf;
     size_t now_index;
-} context_string;
+} string_view;
 
-
-char *str_next(context_string *ctx) {
+char *str_next(string_view *ctx) {
     return ctx->buf->buf + ctx->now_index;
 }
 
-
-char *forword_str_next(context_string *ctx) {
+char *forword_str_next(string_view *ctx) {
     skip_space(ctx);
     return str_next(ctx);
 }
 
-
-int isInt(context_string *context_string) {
-    char *p = str_next(context_string);
-    while (p[0]) {
-        if (p[0] == '.')
-            return DOUBLE;
-
-        if (!isdigit(p[0]))
-            break;
-        p++;
-    }
-    return INT;
-}
-
-
-Value *deepCopyInt(Value *v, int n) {
-    int *heap = malloc(sizeof(int));
-    *heap = n;
-    v->number = heap;
-    v->label = INT;
-    return v;
-}
-
-Value *deepCopyDouble(Value *v, double n) {
-    double *heap = malloc(sizeof(double));
-    *heap = n;
-    v->doubleNumber = heap;
-    v->label = DOUBLE;
-    return v;
-}
-
-
-Value *parseNumber(Value *ctx, context_string *ctx_string) {
+Value *parseNumber(Value *ctx, string_view *ctx_string) {
     char *str_view = str_next(ctx_string);
     char *endpoint = NULL;
     double num = strtod(str_view, &endpoint);
@@ -81,8 +47,7 @@ Value *parseNumber(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-
-Value *parseNull(Value *ctx, context_string *ctx_string) {
+Value *parseNull(Value *ctx, string_view *ctx_string) {
     char *nullStr = str_next(ctx_string);
     if (nullStr[1] == 'u' && nullStr[2] == 'l' && nullStr[3] == 'l') {
         ctx->label = _NULL;
@@ -91,8 +56,7 @@ Value *parseNull(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-
-Value *parseTrue(Value *ctx, context_string *ctx_string) {
+Value *parseTrue(Value *ctx, string_view *ctx_string) {
     char *TrueStr = str_next(ctx_string);
     if (TrueStr[1] == 'r' && TrueStr[2] == 'u' && TrueStr[3] == 'e') {
         ctx->label = True;
@@ -101,8 +65,7 @@ Value *parseTrue(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-
-Value *parseFalse(Value *ctx, context_string *ctx_string) {
+Value *parseFalse(Value *ctx, string_view *ctx_string) {
     char *FalseStr = str_next(ctx_string);
     if (FalseStr[1] == 'a' && FalseStr[2] == 'l' && FalseStr[3] == 's' && FalseStr[4] == 'e') {
         ctx->label = False;
@@ -111,7 +74,7 @@ Value *parseFalse(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-Value *parseString(Value *ctx, context_string *ctx_string) {
+Value *parseString(Value *ctx, string_view *ctx_string) {
     // skip "
 
     if (str_next(ctx_string)[0] != '\"') {
@@ -139,7 +102,7 @@ Value *parseString(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-context_string *skip_space(context_string *ctx) {
+string_view *skip_space(string_view *ctx) {
     char *iter = str_next(ctx);
     while (ctx->now_index < ctx->buf->length) {
         if (isspace(iter[0]) || iter[0] == '\n') {
@@ -151,8 +114,7 @@ context_string *skip_space(context_string *ctx) {
     return ctx;
 }
 
-
-Value *parseArray(Value *ctx, context_string *ctx_string) {
+Value *parseArray(Value *ctx, string_view *ctx_string) {
     // skip [
     ctx_string->now_index += 1;
     list *l = listCreate();
@@ -185,8 +147,7 @@ Value *parseArray(Value *ctx, context_string *ctx_string) {
     return ctx;
 }
 
-
-Value *parseDict(Value *ctx, context_string *ctx_string) {
+Value *parseDict(Value *ctx, string_view *ctx_string) {
     // skip {
     ctx_string->now_index += 1;
 
@@ -234,8 +195,7 @@ Value *parseDict(Value *ctx, context_string *ctx_string) {
 
 }
 
-
-Value *_parse(context_string *ctx_string) {
+Value *_parse(string_view *ctx_string) {
     skip_space(ctx_string);
     Value *value = makeValue(NULL, _NULL);
     char ch = str_next(ctx_string)[0];
@@ -283,7 +243,7 @@ Value *_parse(context_string *ctx_string) {
 
 Value *parse(sdshdr *str) {
     //持有语义，非占有语义
-    context_string ctx_string = {
+    string_view ctx_string = {
             .now_index =0,
             .buf =str
     };
