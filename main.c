@@ -62,19 +62,6 @@ void read_file(FILE *fp, sdshdr *s) {
     free(c);
 }
 
-void testIsInt() {
-    sdshdr *s = makeSdsHdr("121.32");
-    context_string c = {s, 0};
-    int n = isInt(&c);
-    Value *v;
-    if ((v = malloc(sizeof(*v))) == NULL) {
-        return;
-    }
-    parseNumber(v, &c);
-    vPrintf("%s", v);
-    printf("%d", n);
-};
-
 
 int main(int argc, char *argv[]) {
     char *filename = argv[1];
@@ -83,5 +70,10 @@ int main(int argc, char *argv[]) {
     read_file(fp, p);
     // printf("%s", p->buf);
     Value *data = parse(p);
-    vPrintf("%s", data);
+    sdshdr *s = ValueToString(data);
+    for (int i = 0; i < s->length; i++)
+        printf("%c", s->buf[i]);
+
+   // printf("\n\n\n%c", s->buf[s->length - 1]);
+
 }

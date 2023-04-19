@@ -414,15 +414,17 @@ sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *value
     listIter iter;
     listNode *node;
     sdsJoinchar(ctxStr, "[");
-    listRewind(l,&iter);
+    listRewind(l, &iter);
     while ((node = listNext(&iter)) != NULL) {
         callback(l, ctxStr, node->value);
         if (!node->next)
             break;
         sdsJoinchar(ctxStr, ",");
+
+
     }
 
-    size_t len = strlen(ctxStr->buf);
+    size_t len = ctxStr->length;
     ctxStr->buf[len] = 0;
     sdsJoinchar(ctxStr, "]");
     return ctxStr;

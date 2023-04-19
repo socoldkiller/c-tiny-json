@@ -75,6 +75,10 @@ Value *makeValue(void *data, Label label) {
     return value;
 }
 
+Value *copyValue(Value *v) {
+    return makeValue(v->data, v->label);
+}
+
 
 Value *makeValueInt(int n) {
     int *data = malloc(sizeof(int));
@@ -114,6 +118,8 @@ char *dellastZero(char *s) {
     while (--len) {
         if (s[len] == '0')
             s[len] = 0;
+        else
+            break;
     }
     return s;
 }
@@ -134,6 +140,7 @@ sdshdr *ValueToString(Value *v) {
         }
         case FLOAT:
             break;
+
         case DOUBLE: {
             char *cache = malloc(40 + 16);
             memset(cache, 0, 40 + 16);
@@ -145,7 +152,23 @@ sdshdr *ValueToString(Value *v) {
         }
 
         case LIST: {
-            listToString(v->list, ListToStringCallback, toStr);
+            listIter iter;
+            listNode *node;
+            sdsJoinchar(toStr, "[");
+            listRewind(v->list, &iter);
+            while ((node = listNext(&iter)) != NULL) {
+                sdshdr *nodeStr = ValueToString(node->value);
+                sdsJoinchar(toStr, nodeStr->buf);
+                sdshdrRelease(nodeStr);
+                if (!node->next)
+                    break;
+                sdsJoinchar(toStr, ",");
+            }
+
+            size_t len = toStr->length;
+            toStr->buf[len] = 0;
+            sdsJoinchar(toStr, "]");
+
             break;
         }
         case VALUE: {
@@ -195,5 +218,6 @@ void vPrintfUsedTime(const char *format, Value *v) {
     clock_t start = clock();
     vPrintf(format, v);
     clock_t end = clock();
+
     printf("\n\"used time is %.2fms\"", 1000 * (double) (end - start) / CLOCKS_PER_SEC);
 }

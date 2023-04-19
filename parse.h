@@ -83,6 +83,13 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
     }
 
     // skip '\"'
+
+
+    if (str_next(ctx_string)[0] == 'b' && str_next(ctx_string)[1] == 'a') {
+        printf("debug");
+
+    }
+
     ctx_string->now_index += 1;
     sdshdr *s = makeSdsHdr("\"");
     char *start = str_next(ctx_string);
@@ -126,6 +133,8 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
         }
 
         Value *v = _parse(ctx_string);
+
+
         listAddNodeTail(l, v);
         skip_space(ctx_string);
 
@@ -171,7 +180,8 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
             exit(1);
         }
         skip_space(ctx_string);
-        Value *value = _parse(ctx_string);
+        Value *value = _parse(ctx_string); // 好像这里的问题？
+        value = copyValue(value);
         skip_space(ctx_string);
         addKeyValue(d, this_key->buf, value);
         sdshdrRelease(this_key);

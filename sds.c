@@ -58,7 +58,6 @@ sdshdr *sdsJoinchar(sdshdr *s, const char *str) {
             exit(1);
         }
         s->buf = p;
-
     }
     //  s->buf = strcat(s->buf, pStr ? pStr : buf);
     memcpy(s->buf + s->length, pStr ? pStr : str, strlen(str));
