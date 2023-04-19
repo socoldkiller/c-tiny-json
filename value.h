@@ -152,23 +152,7 @@ sdshdr *ValueToString(Value *v) {
         }
 
         case LIST: {
-            listIter iter;
-            listNode *node;
-            sdsJoinchar(toStr, "[");
-            listRewind(v->list, &iter);
-            while ((node = listNext(&iter)) != NULL) {
-                sdshdr *nodeStr = ValueToString(node->value);
-                sdsJoinchar(toStr, nodeStr->buf);
-                sdshdrRelease(nodeStr);
-                if (!node->next)
-                    break;
-                sdsJoinchar(toStr, ",");
-            }
-
-            size_t len = toStr->length;
-            toStr->buf[len] = 0;
-            sdsJoinchar(toStr, "]");
-
+            listToString(v->list, ListToStringCallback, toStr);
             break;
         }
         case VALUE: {
