@@ -180,8 +180,7 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
             exit(1);
         }
         skip_space(ctx_string);
-        Value *value = _parse(ctx_string); // 好像这里的问题？
-        value = copyValue(value);
+        Value *value = _parse(ctx_string);
         skip_space(ctx_string);
         addKeyValue(d, this_key->buf, value);
         sdshdrRelease(this_key);
