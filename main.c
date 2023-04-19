@@ -71,9 +71,8 @@ int main(int argc, char *argv[]) {
     // printf("%s", p->buf);
     Value *data = parse(p);
     sdshdr *s = ValueToString(data);
-    for (int i = 0; i < s->length; i++)
-        printf("%c", s->buf[i]);
+    printf("%s", s->buf);
 
-   // printf("\n\n\n%c", s->buf[s->length - 1]);
+    // printf("\n\n\n%c", s->buf[s->length - 1]);
 
 }

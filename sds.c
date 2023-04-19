@@ -57,6 +57,7 @@ sdshdr *sdsJoinchar(sdshdr *s, const char *str) {
             assert("realloc out of memory");
             exit(1);
         }
+        memset(p + s->length, 0, new_alloc - s->length);
         s->buf = p;
     }
     //  s->buf = strcat(s->buf, pStr ? pStr : buf);
