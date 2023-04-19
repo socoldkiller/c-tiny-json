@@ -85,10 +85,6 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
     // skip '\"'
 
 
-    if (str_next(ctx_string)[0] == 'b' && str_next(ctx_string)[1] == 'a') {
-        printf("debug");
-
-    }
 
     ctx_string->now_index += 1;
     sdshdr *s = makeSdsHdr("\"");
@@ -100,8 +96,10 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
         char ch = start[i];
         tmp[0] = ch;
         sdsJoinchar(s, tmp);
-        if (ch == '\"')
-            break;
+        if (ch == '\"') {
+            if (start[i - 1] != '\\')
+                break;
+        }
     }
     free(tmp);
     ctx->str = s;

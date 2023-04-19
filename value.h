@@ -142,12 +142,11 @@ sdshdr *ValueToString(Value *v) {
             break;
 
         case DOUBLE: {
-            char *cache = malloc(40 + 16);
+            char cache[40 + 16] = {0};
             memset(cache, 0, 40 + 16);
             sprintf(cache, "%f", *(double *) v->number);
             dellastZero(cache);
             sdsJoinchar(toStr, cache);
-            free(cache);
             break;
         }
 
@@ -202,6 +201,5 @@ void vPrintfUsedTime(const char *format, Value *v) {
     clock_t start = clock();
     vPrintf(format, v);
     clock_t end = clock();
-
     printf("\n\"used time is %.2fms\"", 1000 * (double) (end - start) / CLOCKS_PER_SEC);
 }
