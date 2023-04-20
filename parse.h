@@ -88,8 +88,8 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
     ctx_string->now_index += 1;
     sdshdr *s = makeSdsHdr("\"");
     char *start = str_next(ctx_string);
-    char *tmp = malloc(1);
-    memset(tmp, 0, 1);
+    char *tmp = malloc(2);
+    memset(tmp, 0, 2);
     for (size_t i = 0;; i++) {
         ctx_string->now_index += 1;
         char ch = start[i];
