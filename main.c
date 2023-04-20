@@ -69,10 +69,12 @@ int main(int argc, char *argv[]) {
     sdshdr *p = makeSdsHdr("");
     read_file(fp, p);
     // printf("%s", p->buf);
+    clock_t s1 = clock();
     Value *data = parse(p);
     sdshdr *s = ValueToString(data);
-    printf("%s", s->buf);
-
+    clock_t end = clock();
+    printf("%f", 1000 * (double) (end - s1) / CLOCKS_PER_SEC);
+    fclose(fp);
     // printf("\n\n\n%c", s->buf[s->length - 1]);
 
 }

@@ -4,6 +4,7 @@
 #include "value.h"
 #include <assert.h>
 #include <ctype.h>
+#include "err.h"
 
 
 typedef struct string_view string_view;
@@ -12,14 +13,6 @@ Value *_parse(string_view *ctx_string);
 
 struct string_view *skip_space(string_view *ctx);
 
-typedef struct string_view {
-    sdshdr *buf;
-    size_t now_index;
-} string_view;
-
-char *str_next(string_view *ctx) {
-    return ctx->buf->buf + ctx->now_index;
-}
 
 char *forword_str_next(string_view *ctx) {
     skip_space(ctx);
@@ -51,6 +44,9 @@ Value *parseNull(Value *ctx, string_view *ctx_string) {
     char *nullStr = str_next(ctx_string);
     if (nullStr[1] == 'u' && nullStr[2] == 'l' && nullStr[3] == 'l') {
         ctx->label = _NULL;
+    } else {
+        print_parse_error_info(ctx_string);
+        exit(1);
     }
     ctx_string->now_index += 4;
     return ctx;
@@ -60,6 +56,9 @@ Value *parseTrue(Value *ctx, string_view *ctx_string) {
     char *TrueStr = str_next(ctx_string);
     if (TrueStr[1] == 'r' && TrueStr[2] == 'u' && TrueStr[3] == 'e') {
         ctx->label = True;
+    } else {
+        print_parse_error_info(ctx_string);
+        exit(1);
     }
     ctx_string->now_index += 4;
     return ctx;
@@ -69,6 +68,9 @@ Value *parseFalse(Value *ctx, string_view *ctx_string) {
     char *FalseStr = str_next(ctx_string);
     if (FalseStr[1] == 'a' && FalseStr[2] == 'l' && FalseStr[3] == 's' && FalseStr[4] == 'e') {
         ctx->label = False;
+    } else {
+        print_parse_error_info(ctx_string);
+        exit(1);
     }
     ctx_string->now_index += 5;
     return ctx;
@@ -78,13 +80,11 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
     // skip "
 
     if (str_next(ctx_string)[0] != '\"') {
-        printf("dict key must is char*");
+        print_parse_error_info(ctx_string);
         exit(1);
     }
 
     // skip '\"'
-
-
 
     ctx_string->now_index += 1;
     sdshdr *s = makeSdsHdr("\"");
@@ -131,11 +131,8 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
         }
 
         Value *v = _parse(ctx_string);
-
-
         listAddNodeTail(l, v);
         skip_space(ctx_string);
-
         if (str_next(ctx_string)[0] == ']') {
             ctx_string->now_index += 1;
             break;
@@ -144,7 +141,7 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
         if (str_next(ctx_string)[0] == ',' || str_next(ctx_string)[0] == ']')
             ++ctx_string->now_index;
         else {
-            printf("error");
+            print_parse_error_info(ctx_string);
             exit(1);
         }
 
@@ -189,8 +186,9 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
             break;
         }
 
+
         if (str_view[0] != ',') {
-            printf("parse error");
+            print_parse_error_info(ctx_string);
             exit(1);
         }
         ++ctx_string->now_index;
@@ -244,18 +242,24 @@ Value *_parse(string_view *ctx_string) {
             printf("known error type,please check!");
             exit(1);
     }
-
     return value;
 }
 
 Value *parse(sdshdr *str) {
     //持有语义，非占有语义
     string_view ctx_string = {
-            .now_index =0,
-            .buf =str
+            .buf =str,
     };
-    ctx_string.buf = str;
+    
+    err error = {
+            .line =0,
+            .column = 0,
+            .stringView = &ctx_string
+    };
+    
+
     ctx_string.now_index = 0;
+    ctx_string.err_info = &error;
     Value *data = _parse(&ctx_string);
     return data;
 }
