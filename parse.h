@@ -46,7 +46,7 @@ Value *parseNull(Value *ctx, string_view *ctx_string) {
         ctx->label = _NULL;
     } else {
         print_parse_error_info(ctx_string);
-        exit(1);
+        return NULL;
     }
     ctx_string->now_index += 4;
     return ctx;
@@ -58,7 +58,7 @@ Value *parseTrue(Value *ctx, string_view *ctx_string) {
         ctx->label = True;
     } else {
         print_parse_error_info(ctx_string);
-        exit(1);
+        return NULL;
     }
     ctx_string->now_index += 4;
     return ctx;
@@ -70,7 +70,7 @@ Value *parseFalse(Value *ctx, string_view *ctx_string) {
         ctx->label = False;
     } else {
         print_parse_error_info(ctx_string);
-        exit(1);
+        return NULL;
     }
     ctx_string->now_index += 5;
     return ctx;
@@ -78,10 +78,9 @@ Value *parseFalse(Value *ctx, string_view *ctx_string) {
 
 Value *parseString(Value *ctx, string_view *ctx_string) {
     // skip "
-
     if (str_next(ctx_string)[0] != '\"') {
         print_parse_error_info(ctx_string);
-        exit(1);
+        return NULL;
     }
 
     // skip '\"'
@@ -109,6 +108,7 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
 
 string_view *skip_space(string_view *ctx) {
     char *iter = str_next(ctx);
+
     while (ctx->now_index < ctx->buf->length) {
         if (isspace(iter[0]) || iter[0] == '\n') {
             ctx->now_index += 1;
@@ -142,7 +142,7 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
             ++ctx_string->now_index;
         else {
             print_parse_error_info(ctx_string);
-            exit(1);
+            return NULL;
         }
 
     }
@@ -165,14 +165,18 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
         // skip " " or "\n"
         skip_space(ctx_string);
         Value *key = parseString(ctx, ctx_string);
+
+        if (!key)
+            return NULL;
+
         sdshdr *this_key = key->str;
         skip_space(ctx_string);
         char *p = str_next(ctx_string);
         if (p[0] == ':')
             ++ctx_string->now_index;
         else {
-            printf("error type");
-            exit(1);
+            print_parse_error_info(ctx_string);
+            return NULL;
         }
         skip_space(ctx_string);
         Value *value = _parse(ctx_string);
@@ -203,6 +207,8 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
 Value *_parse(string_view *ctx_string) {
     skip_space(ctx_string);
     Value *value = makeValue(NULL, _NULL);
+    if (!value)
+        return NULL;
     char ch = str_next(ctx_string)[0];
     switch (ch) {
         case '\"':
@@ -239,8 +245,8 @@ Value *_parse(string_view *ctx_string) {
         case 0:
             break;
         default:
-            printf("known error type,please check!");
-            exit(1);
+            print_parse_error_info(ctx_string);
+            return NULL;
     }
     return value;
 }
@@ -250,13 +256,13 @@ Value *parse(sdshdr *str) {
     string_view ctx_string = {
             .buf =str,
     };
-    
+
     err error = {
             .line =0,
             .column = 0,
             .stringView = &ctx_string
     };
-    
+
 
     ctx_string.now_index = 0;
     ctx_string.err_info = &error;

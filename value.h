@@ -128,25 +128,25 @@ sdshdr *ValueToString(Value *v) {
     if (!v) {
         return NULL;
     }
+
+    static char number[40 + 16] = {0};
     sdshdr *toStr = makeSdsHdr("");
+
     switch (v->label) {
         case INT: {
-            char *cache = malloc(40 + 16);
-            memset(cache, 0, 40 + 16);
-            sprintf(cache, "%d", *(int *) v->number);
-            sdsJoinchar(toStr, cache);
-            free(cache);
+            memset(number, 0, 40 + 16);
+            sprintf(number, "%d", *(int *) v->number);
+            sdsJoinchar(toStr, number);
             break;
         }
         case FLOAT:
             break;
 
         case DOUBLE: {
-            char cache[40 + 16] = {0};
-            memset(cache, 0, 40 + 16);
-            sprintf(cache, "%f", *(double *) v->number);
-            dellastZero(cache);
-            sdsJoinchar(toStr, cache);
+            memset(number, 0, 40 + 16);
+            sprintf(number, "%f", *(double *) v->number);
+            dellastZero(number);
+            sdsJoinchar(toStr, number);
             break;
         }
 
@@ -189,6 +189,9 @@ sdshdr *ValueToString(Value *v) {
 }
 
 void vPrintf(const char *format, Value *v) {
+    if (!v) {
+        return;
+    }
     sdshdr *toString = ValueToString(v);
     if (!strcmp("%s", format)) {
         printf("%s", toString->buf);
