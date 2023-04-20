@@ -35,20 +35,19 @@ void testlistToString() {
 
 
 void testDictToString() {
-    list *l = listCreate();
-    Dict *d = makeDict();
-    for (int i = 0; i < 3; i++) {
-        listAddNodeTail(l, makeValueInt(rand()));
-        listAddNodeTail(l, makeValueStr("hello"));
-    }
-    addKeyValue(d, "a", makeValueList(l));
-    addKeyValue(d, "ae", makeValueStr("what"));
-    addKeyValue(d, "abc", makeValueInt(1));
-    addKeyValue(d, "dict", makeValueDict(makeDict()));
-    Dict *dict = makeDict();
-    addKeyValue(dict, "d", makeValueDict(d));
-    addKeyValue(dict, "saf", makeValueDict(d));
-    vPrintfUsedTime("%s", makeValueDict(dict));
+    Dict *d1 = makeDict();
+    list *h = listCreate();
+    listAddNodeTail(h, makeValueInt(1));
+    addKeyValue(d1, "a", makeValueList(listCopy(h)));
+    addKeyValue(d1, "b", makeValueInt(2));
+    Dict *d2 = makeDict();
+    addKeyValue(d2, "d1", makeValueDict(copyDict(d1)));
+    sdshdr *toString = ValueToString(makeValueDict(d2));
+    printf("%s", toString->buf);
+    sdshdrRelease(toString);
+    releaseDict(d2);
+    releaseDict(d1);
+    printf("%d", h->ref_count);
 }
 
 
@@ -64,8 +63,13 @@ void read_file(FILE *fp, sdshdr *s) {
 
 
 int main(int argc, char *argv[]) {
+    testDictToString();
     char *filename = argv[1];
-    FILE *fp = fopen(filename, "r");
+    FILE *fp = NULL;
+    if ((fp = fopen(filename, "r")) == NULL) {
+        printf("%s not exists", filename);
+        exit(1);
+    }
     sdshdr *p = makeSdsHdr("");
     read_file(fp, p);
     // printf("%s", p->buf);
@@ -75,6 +79,7 @@ int main(int argc, char *argv[]) {
     clock_t end = clock();
     printf("%f", 1000 * (double) (end - s1) / CLOCKS_PER_SEC);
     fclose(fp);
-    // printf("\n\n\n%c", s->buf[s->length - 1]);
-
+    vPrintf("%s", data);
+    sdshdrRelease(s);
+    releaseValue(data);
 }

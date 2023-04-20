@@ -131,6 +131,9 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
         }
 
         Value *v = _parse(ctx_string);
+        if (!v) {
+            return NULL;
+        }
         listAddNodeTail(l, v);
         skip_space(ctx_string);
         if (str_next(ctx_string)[0] == ']') {
@@ -262,7 +265,6 @@ Value *parse(sdshdr *str) {
             .column = 0,
             .stringView = &ctx_string
     };
-
 
     ctx_string.now_index = 0;
     ctx_string.err_info = &error;

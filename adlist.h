@@ -48,6 +48,7 @@ typedef struct list {
     freeNode *freeNode;
     matchlist *match;
     ulong len;
+    int ref_count;
 } list;
 
 inline static ulong listLength(list *l) {
@@ -105,6 +106,8 @@ void listReleaseIterator(listIter *iter);
 
 list *listDup(list *orig);
 
+list *listCopy(list *orig);
+
 listNode *listSearchKey(list *list, void *key);
 
 listNode *listIndex(list *list, long index);
@@ -127,4 +130,4 @@ void listNodeMap(list *l, ListNodeCallBack callback);
 
 int findlistNode(const list *l, void *p, int(cmp)(listNode *n, void *p));
 
-sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *node),sdshdr *ctx);
+sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *node), sdshdr *ctx);

@@ -2,6 +2,7 @@
 
 #include "adlist.h"
 #include "value.h"
+#include "assert.h"
 
 typedef struct Pair {
     sdshdr *key;
@@ -19,10 +20,26 @@ Pair *makePair(const char *key, Value *value) {
     return p;
 }
 
+void releasePair(void *p) {
+    Pair *pair = p;
+    sdshdr *key = pair->key;
+    Value *value = pair->value;
+    sdshdrRelease(key);
+    releaseValue(value);
+    free(pair);
+}
+
 
 typedef struct Dict {
     list *l;
+    int ref_count;
 } Dict;
+
+
+Dict *copyDict(Dict *dict) {
+    dict->ref_count++;
+    return dict;
+}
 
 
 Dict *makeDict() {
@@ -31,7 +48,26 @@ Dict *makeDict() {
         return NULL;
     }
     d->l = listCreate();
+    d->l->freeNode = releasePair;
+    d->ref_count = 1;
     return d;
+}
+
+Dict *deepcopyDict(Dict *dict) {
+    Dict *copy = makeDict();
+    copy->l = listDup(dict->l);
+    copy->ref_count = 1;
+    return copy;
+}
+
+void releaseDict(Dict *dict) {
+    dict->ref_count--;
+    assert(dict->ref_count >= 0);
+
+    if (dict->ref_count == 0) {
+        listRelease(dict->l); //?
+        free(dict);
+    }
 }
 
 Dict *addKeyValue(Dict *d, const char *key, Value *value) {
@@ -75,7 +111,11 @@ sdshdr *DictToString(Dict *dict, sdshdr *ctx) {
         }
     }
     sdsJoinchar(ctx, "}");
-
     listReleaseDistance(head);
     return ctx;
 }
+
+typedef Dict JSONDict;
+
+
+

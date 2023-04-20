@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include "adlist.h"
+#include <assert.h>
 
 const int AL_START_HEAD = 0;
 const int AL_START_TAIL = 1;
@@ -21,6 +22,7 @@ list *listCreate(void) {
     list->dup = NULL;
     list->freeNode = NULL;
     list->match = NULL;
+    list->ref_count = 1;
     return list;
 }
 
@@ -44,8 +46,12 @@ void listEmpty(list *list) {
  *
  * This function can't fail. */
 void listRelease(list *list) {
-    listEmpty(list);
-    free(list);
+    list->ref_count--;
+    assert(list->ref_count >= 0);
+    if (list->ref_count == 0) {
+        listEmpty(list);
+        free(list);
+    }
 }
 
 /* Add a new node to the list, to head, containing the specified 'value'
@@ -204,6 +210,11 @@ listNode *listNext(listIter *iter) {
 }
 
 
+list *listCopy(list *orig) {
+    orig->ref_count += 1;
+    return orig;
+}
+
 /* Duplicate the whole list. On out of memory NULL is returned.
  * On success a copy of the original list is returned.
  *
@@ -222,6 +233,7 @@ list *listDup(list *orig) {
     copy->dup = orig->dup;
     copy->freeNode = orig->freeNode;
     copy->match = orig->match;
+    copy->ref_count = 1;
     listRewind(orig, &iter);
     while ((node = listNext(&iter)) != NULL) {
         void *value;
@@ -420,10 +432,7 @@ sdshdr *listToString(list *l, sdshdr *callback(list *l, sdshdr *ctx, void *value
         if (!node->next)
             break;
         sdsJoinchar(ctxStr, ",");
-
-
     }
-
     size_t len = ctxStr->length;
     ctxStr->buf[len] = 0;
     sdsJoinchar(ctxStr, "]");

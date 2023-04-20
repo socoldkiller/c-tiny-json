@@ -12,6 +12,9 @@ struct Dict;
 
 typedef struct Dict Dict;
 
+void releaseDict(Dict *dict);
+
+
 sdshdr *DictToString(Dict *dict, sdshdr *ctx);
 
 enum {
@@ -61,6 +64,7 @@ typedef struct Value {
         void *data;
     };
     Label label;
+    size_t ref_count;
 
 } Value;
 
@@ -72,11 +76,56 @@ Value *makeValue(void *data, Label label) {
     }
     value->data = data;
     value->label = label;
+    value->ref_count = 1;
     return value;
 }
 
-Value *copyValue(Value *v) {
-    return makeValue(v->data, v->label);
+
+Value *copy(Value *v) {
+    assert(v != NULL);
+    v->ref_count++;
+    return v;
+}
+
+Value *deepcopy(Value *v) {
+    // refernce data ?
+    Value *copy = makeValue(v->data, v->label);
+    copy->ref_count = 1;
+    return v;
+}
+
+
+void releaseValue(void *value) {
+    Value *v = value;
+    v->ref_count--;
+    assert(v->ref_count >= 0);
+    if (v->ref_count > 0)
+        return;
+    switch (v->label) {
+        case _NULL:
+        case True:
+        case False:
+            break;
+
+        case INT:
+        case DOUBLE:
+        case FLOAT:
+            free(v->data);
+            break;
+
+        case DICT:
+            releaseDict(v->dict);
+            break;
+        case LIST:
+            listRelease(v->list);
+            break;
+
+        case STRING:
+            sdshdrRelease(v->str);
+            break;
+
+    }
+    free(v);
 }
 
 
