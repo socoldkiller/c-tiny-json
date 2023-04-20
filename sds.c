@@ -16,7 +16,7 @@ sdshdr *makeSdsHdr(const char *s) {
     char *p;
     sdshdr *sds;
 
-    if ((sds = malloc(sizeof(*sds))) == NULL) {
+    if ((sds = malloc(sizeof(sdshdr))) == NULL) {
         return NULL;
     }
 
@@ -47,10 +47,9 @@ sdshdr *sdsJoinchar(sdshdr *s, const char *str) {
         }
         memcpy(pStr, str, len + 1);
     }
-
     size_t new_alloc = s->alloc_length;
-    if (s->length + len >= s->alloc_length) {
-        new_alloc = _sdsmax(new_alloc << 1, s->length + len) | 1;
+    if (s->length + len + 1 > s->alloc_length) {
+        new_alloc = _sdsmax(new_alloc << 1, s->length + len + 1) | 1;
         char *p = NULL;
         p = realloc(s->buf, new_alloc);
         if (!p) {

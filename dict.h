@@ -65,7 +65,7 @@ void releaseDict(Dict *dict) {
     assert(dict->ref_count >= 0);
 
     if (dict->ref_count == 0) {
-        listRelease(dict->l); //?
+        listRelease(dict->l);
         free(dict);
     }
 }

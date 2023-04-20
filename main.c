@@ -52,18 +52,21 @@ void testDictToString() {
 
 
 void read_file(FILE *fp, sdshdr *s) {
-    char *c = malloc(1);
+    char *c = malloc(2);
     while (1) {
+        memset(c, 0, 2);
         *c = (char) fgetc(fp);
-        if (*c == EOF) return;//到文件尾，不存在下一行
+        if (*c == EOF) {
+            free(c);
+            return;
+        }//到文件尾，不存在下一行
         sdsJoinchar(s, c);
     }
-    free(c);
+    //free(c);
 }
 
 
 int main(int argc, char *argv[]) {
-    testDictToString();
     char *filename = argv[1];
     FILE *fp = NULL;
     if ((fp = fopen(filename, "r")) == NULL) {
@@ -72,14 +75,12 @@ int main(int argc, char *argv[]) {
     }
     sdshdr *p = makeSdsHdr("");
     read_file(fp, p);
-    // printf("%s", p->buf);
-    clock_t s1 = clock();
     Value *data = parse(p);
-    sdshdr *s = ValueToString(data);
-    clock_t end = clock();
-    printf("%f", 1000 * (double) (end - s1) / CLOCKS_PER_SEC);
-    fclose(fp);
-    vPrintf("%s", data);
-    sdshdrRelease(s);
+    sdshdr *buf = ValueToString(data);
+    printf("%s", buf->buf);
+    sdshdrRelease(buf);
     releaseValue(data);
+    sdshdrRelease(p);
+    fclose(fp);
+
 }

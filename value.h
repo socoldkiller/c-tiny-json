@@ -69,6 +69,40 @@ typedef struct Value {
 } Value;
 
 
+void releaseValue(void *value) {
+    Value *v = value;
+    v->ref_count--;
+    assert(v->ref_count >= 0);
+    if (v->ref_count > 0)
+        return;
+    switch (v->label) {
+        case _NULL:
+        case True:
+        case False:
+            break;
+
+        case INT:
+        case DOUBLE:
+        case FLOAT:
+            free(v->data);
+            break;
+
+        case DICT:
+            releaseDict(v->dict);
+            break;
+        case LIST:
+            v->list->freeNode = releaseValue;
+            listRelease(v->list);
+            break;
+        case STRING:
+            sdshdrRelease(v->str);
+            break;
+
+    }
+    free(v);
+}
+
+
 Value *makeValue(void *data, Label label) {
     Value *value;
     if ((value = malloc(sizeof(*value))) == NULL) {
@@ -92,40 +126,6 @@ Value *deepcopy(Value *v) {
     Value *copy = makeValue(v->data, v->label);
     copy->ref_count = 1;
     return v;
-}
-
-
-void releaseValue(void *value) {
-    Value *v = value;
-    v->ref_count--;
-    assert(v->ref_count >= 0);
-    if (v->ref_count > 0)
-        return;
-    switch (v->label) {
-        case _NULL:
-        case True:
-        case False:
-            break;
-
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-            free(v->data);
-            break;
-
-        case DICT:
-            releaseDict(v->dict);
-            break;
-        case LIST:
-            listRelease(v->list);
-            break;
-
-        case STRING:
-            sdshdrRelease(v->str);
-            break;
-
-    }
-    free(v);
 }
 
 
