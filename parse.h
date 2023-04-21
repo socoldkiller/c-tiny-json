@@ -80,7 +80,9 @@ Value *parseString(Value *ctx, string_view *ctx_string) {
     // skip "
     if (str_next(ctx_string)[0] != '\"') {
         print_parse_error_info(ctx_string);
-        return NULL;
+        releaseValue(ctx);
+        ctx = NULL;
+        return ctx;
     }
 
     // skip '\"'
@@ -174,10 +176,13 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
         }
         // skip " " or "\n"
         skip_space(ctx_string);
-        Value *key = parseString(ctx, ctx_string);
-
-        if (!key)
-            return NULL;
+        Value *key = makeValue(NULL, STRING);
+        key = parseString(key, ctx_string);
+        if (!key) {
+            // return NULL;
+            success = 0;
+            break;
+        }
 
         sdshdr *this_key = key->str;
         skip_space(ctx_string);
@@ -187,13 +192,14 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
         else {
             success = 0;
             print_parse_error_info(ctx_string);
+            releaseValue(key);
             break;
         }
         skip_space(ctx_string);
         Value *value = _parse(ctx_string);
         skip_space(ctx_string);
         addKeyValue(d, this_key->buf, value);
-        sdshdrRelease(this_key);
+        releaseValue(key);
         char *str_view = str_next(ctx_string);
 
         if (str_view[0] == '}') {
