@@ -132,7 +132,7 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
 
         Value *v = _parse(ctx_string);
         if (!v) {
-            return NULL;
+            break;
         }
         listAddNodeTail(l, v);
         skip_space(ctx_string);
@@ -145,12 +145,14 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
             ++ctx_string->now_index;
         else {
             print_parse_error_info(ctx_string);
-            return NULL;
+            break;
         }
 
     }
     ctx->list = l;
     ctx->label = LIST;
+    releaseValue(ctx);
+    ctx = NULL;
     return ctx;
 }
 
@@ -179,7 +181,7 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
             ++ctx_string->now_index;
         else {
             print_parse_error_info(ctx_string);
-            return NULL;
+            break;
         }
         skip_space(ctx_string);
         Value *value = _parse(ctx_string);
@@ -196,13 +198,14 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
 
         if (str_view[0] != ',') {
             print_parse_error_info(ctx_string);
-            exit(1);
+            break;
         }
         ++ctx_string->now_index;
     }
-
     ctx->dict = d;
     ctx->label = DICT;
+    releaseValue(ctx);
+    ctx = NULL;
     return ctx;
 
 }

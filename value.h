@@ -70,6 +70,8 @@ typedef struct Value {
 
 
 void releaseValue(void *value) {
+    if (!value)
+        return;
     Value *v = value;
     v->ref_count--;
     assert(v->ref_count >= 0);
