@@ -121,6 +121,7 @@ string_view *skip_space(string_view *ctx) {
 
 Value *parseArray(Value *ctx, string_view *ctx_string) {
     // skip [
+    int success = 1;
     ctx_string->now_index += 1;
     list *l = listCreate();
     while (1) {
@@ -132,6 +133,7 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
 
         Value *v = _parse(ctx_string);
         if (!v) {
+            success = 0;
             break;
         }
         listAddNodeTail(l, v);
@@ -144,6 +146,7 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
         if (str_next(ctx_string)[0] == ',' || str_next(ctx_string)[0] == ']')
             ++ctx_string->now_index;
         else {
+            success = 0;
             print_parse_error_info(ctx_string);
             break;
         }
@@ -151,15 +154,17 @@ Value *parseArray(Value *ctx, string_view *ctx_string) {
     }
     ctx->list = l;
     ctx->label = LIST;
-    releaseValue(ctx);
-    ctx = NULL;
+    if (!success) {
+        releaseValue(ctx);
+        ctx = NULL;
+    }
     return ctx;
 }
 
 Value *parseDict(Value *ctx, string_view *ctx_string) {
     // skip {
     ctx_string->now_index += 1;
-
+    int success = 1;
     Dict *d = makeDict();
     while (1) {
         //key
@@ -180,6 +185,7 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
         if (p[0] == ':')
             ++ctx_string->now_index;
         else {
+            success = 0;
             print_parse_error_info(ctx_string);
             break;
         }
@@ -197,6 +203,7 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
 
 
         if (str_view[0] != ',') {
+            success = 0;
             print_parse_error_info(ctx_string);
             break;
         }
@@ -204,8 +211,10 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
     }
     ctx->dict = d;
     ctx->label = DICT;
-    releaseValue(ctx);
-    ctx = NULL;
+    if (!success) {
+        releaseValue(ctx);
+        ctx = NULL;
+    }
     return ctx;
 
 }
