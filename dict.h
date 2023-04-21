@@ -2,7 +2,7 @@
 
 #include "adlist.h"
 #include "value.h"
-#include "assert.h"
+#include <assert.h>
 
 typedef struct Pair {
     sdshdr *key;
@@ -61,6 +61,7 @@ Dict *deepcopyDict(Dict *dict) {
 }
 
 void releaseDict(Dict *dict) {
+    assert(dict);
     dict->ref_count--;
     assert(dict->ref_count >= 0);
 
@@ -71,11 +72,13 @@ void releaseDict(Dict *dict) {
 }
 
 Dict *addKeyValue(Dict *d, const char *key, Value *value) {
+    assert(d);
     listAddNodeTail(d->l, makePair(key, value));
     return d;
 }
 
 void *DictKey(Dict *d, const char *key) {
+    assert(d);
     list *list = d->l;
     listIterDistance *head = listGetIteratorDistance(list, AL_START_HEAD, 0);
     listNode *node;
@@ -86,15 +89,13 @@ void *DictKey(Dict *d, const char *key) {
             rValue = v->value;
         }
     }
+
     listReleaseDistance(head);
     return rValue;
 }
 
 sdshdr *DictToString(Dict *dict, sdshdr *ctx) {
-    if (!ctx) {
-        assert("ctx is null");
-        exit(1);
-    }
+    assert(ctx);
     sdsJoinchar(ctx, "{");
     list *list = dict->l;
     listIterDistance *head = listGetIteratorDistance(list, AL_START_HEAD, 0);

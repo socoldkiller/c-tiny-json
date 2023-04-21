@@ -59,11 +59,18 @@ sdshdr *sdsJoinchar(sdshdr *s, const char *str) {
         memset(p + s->length, 0, new_alloc - s->length);
         s->buf = p;
     }
-    //  s->buf = strcat(s->buf, pStr ? pStr : buf);
-    memcpy(s->buf + s->length, pStr ? pStr : str, strlen(str));
-    s->alloc_length = new_alloc;
-    // s->length = strlen(s->buf);
+
+#if 0
+    s->buf = strcat(s->buf, pStr ? pStr : buf);
+    s->length = strlen(s->buf);
+#endif
+
+#if 1
+    memcpy(s->buf + s->length, pStr ? pStr : str, len);
     s->length += len;
+#endif
+
+    s->alloc_length = new_alloc;
     free(pStr);
     return s;
 }
