@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctype.h>
+#include "string_view.h"
 #include "value.h"
 #include <assert.h>
 #include <ctype.h>
@@ -25,6 +26,15 @@ Value *parseNumber(Value *ctx, string_view *ctx_string) {
     char *endpoint = NULL;
     double num = strtod(str_view, &endpoint);
     size_t num_len = endpoint - str_view;
+
+
+    if (num_len == 0) {
+        print_parse_error_info(ctx_string);
+        releaseValue(ctx);
+        ctx = NULL;
+        return ctx;
+    }
+
     if (num - (int) num) {
         JsonDouble *data = makeJsonDouble(str_view, num_len, num);
         ctx->doubleNumber = data;
@@ -37,7 +47,7 @@ Value *parseNumber(Value *ctx, string_view *ctx_string) {
         ctx->label = INT;
     }
 
-    ctx_string->now_index += (endpoint - str_view);
+    ctx_string->now_index += num_len;
     return ctx;
 }
 
@@ -288,6 +298,12 @@ Value *parse(sdshdr *str) {
     ctx_string.now_index = 0;
     ctx_string.err_info = &error;
     Value *data = _parse(&ctx_string);
+
+    if (ctx_string.now_index != ctx_string.buf->length) {
+        print_parse_error_info(&ctx_string);
+        releaseValue(data);
+        data = NULL;
+    }
     return data;
 }
 
