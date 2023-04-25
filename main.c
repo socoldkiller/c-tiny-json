@@ -90,5 +90,4 @@ int main(int argc, char *argv[]) {
     read_file(fp, p);
     caltime(p);
     fclose(fp);
-
 }

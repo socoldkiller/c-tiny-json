@@ -4,6 +4,7 @@
 #include "value.h"
 #include <assert.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include "err.h"
 
 
@@ -23,10 +24,10 @@ Value *parseNumber(Value *ctx, string_view *ctx_string) {
     char *str_view = str_next(ctx_string);
     char *endpoint = NULL;
     double num = strtod(str_view, &endpoint);
+    size_t num_len = endpoint - str_view;
     if (num - (int) num) {
-        double *heap = malloc(sizeof(double));
-        *heap = num;
-        ctx->doubleNumber = heap;
+        JsonDouble *data = makeJsonDouble(str_view, num_len, num);
+        ctx->doubleNumber = data;
         ctx->label = DOUBLE;
 
     } else {

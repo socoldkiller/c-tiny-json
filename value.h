@@ -52,12 +52,42 @@ const char *getTypeName(int type) {
 }
 
 
+typedef struct JsonDouble {
+    sdshdr *val_string;
+    double val;
+
+} JsonDouble;
+
+
+JsonDouble *makeJsonDouble(const char *val, size_t length, double _val) {
+    JsonDouble *data;
+    if ((data = malloc(sizeof(*data))) == NULL) {
+        return NULL;
+    }
+
+    sdshdr *val_string = makeSdsHdr("");
+    char s[2] = {0};
+    for (int i = 0; i < length; i++) {
+        s[0] = val[i];
+        sdsJoinchar(val_string, s);
+    }
+    data->val_string = val_string;
+    data->val = _val;
+    return data;
+}
+
+void freeJsonDouble(JsonDouble *data) {
+    sdshdrRelease(data->val_string);
+    free(data);
+}
+
+
 typedef struct Value {
 
     union {
         sdshdr *str;
         int *number;
-        double *doubleNumber;
+        JsonDouble *doubleNumber;
         list *list;
         struct Value *value;
         Dict *dict;
@@ -84,9 +114,12 @@ void releaseValue(void *value) {
             break;
 
         case INT:
-        case DOUBLE:
         case FLOAT:
             free(v->data);
+            break;
+
+        case DOUBLE:
+            freeJsonDouble(v->doubleNumber);
             break;
 
         case DICT:
@@ -194,10 +227,8 @@ sdshdr *ValueToString(Value *v) {
             break;
 
         case DOUBLE: {
-            memset(number, 0, 40 + 16);
-            sprintf(number, "%f", *(double *) v->number);
-            dellastZero(number);
-            sdsJoinchar(toStr, number);
+            JsonDouble *p = v->doubleNumber;
+            sdsJoinchar(toStr, p->val_string->buf);
             break;
         }
 
