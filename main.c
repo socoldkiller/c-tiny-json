@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include "sds.h"
@@ -70,12 +69,12 @@ void caltime(sdshdr *p) {
     clock_t s = clock();
     Value *data = parse(p);
     sdshdr *buf = ValueToString(data);
- //   printf("%s", buf->buf);
+    printf("%s", buf->buf);
     sdshdrRelease(buf);
     releaseValue(data);
     sdshdrRelease(p);
     clock_t e = clock();
-    printf("%fms", 1000 * (double) (e - s) / CLOCKS_PER_SEC);
+    printf("%fms", (double) (e - s) / CLOCKS_PER_SEC * 1000.0);
 }
 
 
