@@ -27,10 +27,11 @@ enum {
     DICT,
     _NULL,
     True,
-    False
+    False,
+    Sytanx
 };
 
-const char *getTypeName(int type) {
+const char *get_json_type_name(int type) {
     switch (type) {
         case INT:
             return "INT";
@@ -46,6 +47,14 @@ const char *getTypeName(int type) {
             return "VALUE";
         case DICT:
             return "DICT";
+        case _NULL:
+            return "NULL";
+        case True:
+            return "true";
+        case False:
+            return "false";
+        case Sytanx:
+            return "Sytanx";
         default:
             return "known type";
     }
@@ -125,10 +134,12 @@ void releaseValue(void *value) {
         case DICT:
             releaseDict(v->dict);
             break;
+
         case LIST:
             v->list->freeNode = releaseValue;
             listRelease(v->list);
             break;
+
         case STRING:
             sdshdrRelease(v->str);
             break;
@@ -140,7 +151,7 @@ void releaseValue(void *value) {
 
 Value *makeValue(void *data, Label label) {
     Value *value;
-    if ((value = malloc(sizeof(*value))) == NULL) {
+    if ((value = malloc(sizeof(Value))) == NULL) {
         return NULL;
     }
     value->data = data;
@@ -236,12 +247,14 @@ sdshdr *ValueToString(Value *v) {
             listToString(v->list, ListToStringCallback, toStr);
             break;
         }
+
         case VALUE: {
             sdshdr *p = ValueToString(v);
             sdsJoinchar(toStr, p->buf);
             sdshdrRelease(p);
             break;
         }
+
         case STRING:
             sdsJoinchar(toStr, v->str->buf);
             break;
@@ -253,7 +266,6 @@ sdshdr *ValueToString(Value *v) {
         case _NULL:
             sdsJoinchar(toStr, "null");
             break;
-
 
         case True:
             sdsJoinchar(toStr, "true");
