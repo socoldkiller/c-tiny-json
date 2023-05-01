@@ -25,9 +25,15 @@ Value *parseNumber(Value *ctx, string_view *ctx_string) {
     char *str_view = str_next(ctx_string);
     char *endpoint = NULL;
     double num = strtod(str_view, &endpoint);
+    char *l = endpoint - 1;
+    if (!isdigit(*l)) {
+        print_parse_error_info(ctx_string);
+        releaseValue(ctx);
+        ctx = NULL;
+        return ctx;
+    }
+
     size_t num_len = endpoint - str_view;
-
-
     if (num_len == 0) {
         print_parse_error_info(ctx_string);
         releaseValue(ctx);
@@ -181,12 +187,12 @@ Value *parseDict(Value *ctx, string_view *ctx_string) {
     Dict *d = makeDict();
     while (1) {
         //key
-        if (forword_str_next(ctx_string)[0] == '}') {
+        skip_space(ctx_string);
+        if (str_next(ctx_string)[0] == '}') {
             ctx_string->now_index += 1;
             break;
         }
         // skip " " or "\n"
-        skip_space(ctx_string);
         Value *key = makeValue(NULL, STRING);
         key = parseString(key, ctx_string);
         if (!key) {
